@@ -3,11 +3,14 @@ import random
 
 
 class NK(object):
-    def __init__(self, k=2, epochs=100, error=0.001):
+    def __init__(self, k=2, epochs=100, error=0.1):
         self.k = k
         self.epochs = epochs
         self.error = error
+        self.pre_error = 0
         self.centroids = []
+        self.iteration = 0
+        self.sse = 0.0
 
     def distance(self, centroid, point):
         n = len(centroid)
@@ -39,8 +42,9 @@ class NK(object):
         self.find_centroids(data)
 
         for epoch in range(self.epochs):
+            self.iteration += 1
             for i in range(self.k):
-                clusters[i] = [[0]*data.shape[1]]
+                clusters[i] = [[0] * data.shape[1]]
 
             # Get the nearest data points to the centroid
             for d in data:
@@ -51,10 +55,13 @@ class NK(object):
             previous_centroid = self.centroids.copy()
             for i in range(self.k):
                 self.centroids[i] = np.array(clusters[i]).mean(axis=0)
-            error = np.sum(np.array(previous_centroid) - np.array(self.centroids))
+            error = np.sum(np.square(np.array(previous_centroid) - np.array(self.centroids)))
             print("Epoch " + str(epoch) + " Loss = " + str(abs(error)))
-            if abs(error) < self.error:
+            if self.iteration == 1:
+                self.sse = error / self.k
+            if abs(error) < self.error or abs(self.pre_error - error) < 1e-6:
                 break
+            self.pre_error = error
 
     def predict(self, data):
         preds = []
@@ -73,13 +80,16 @@ class NK(object):
 
 
 class LK(object):
-    def __init__(self, k=2, epochs=100, error=0.001, alpha=0.01):
+    def __init__(self, k=2, epochs=100, error=0.01, alpha=0.01):
         self.k = k
         self.epochs = epochs
         self.error = error
         self.centroids = []
         self.alpha = alpha
         self.sum_of_list_of_update_vectors = [0] * k
+        self.pre_error = 0
+        self.iteration = 0
+        self.sse = 0.0
 
     def distance(self, centroid, point):
         n = len(centroid)
@@ -114,10 +124,10 @@ class LK(object):
         for i in range(self.k):
             self.sum_of_list_of_update_vectors[i] = 0
         for epoch in range(self.epochs):
-
+            self.iteration += 1
             # Resetting Clusters
             for i in range(self.k):
-                clusters[i] = [[0]*data.shape[1]]
+                clusters[i] = [[0] * data.shape[1]]
 
             # Get the nearest data points to the centroid
             for d in data:
@@ -130,14 +140,14 @@ class LK(object):
             # Calculating direction vectors and update vector
 
             direction_vector = self.centroids - global_centroid
-            update_vector = random.uniform(0, self.alpha) * direction_vector
+            update_vector = self.alpha * direction_vector
             temp_arr = np.array([])
             for i in range(self.k):
                 self.sum_of_list_of_update_vectors[i] += update_vector[i]
                 updated_data_points = np.array(clusters[i]) + update_vector[i]
                 self.centroids[i] += update_vector[i]
                 temp_arr = np.append(temp_arr, updated_data_points)
-            data = temp_arr.reshape(shape)
+            # data = temp_arr.reshape(shape)
 
             # update the centroids
             previous_centroid = self.centroids.copy()
@@ -146,8 +156,10 @@ class LK(object):
 
             error = np.sum(np.array(previous_centroid) - np.array(self.centroids))
             print("Epoch " + str(epoch) + " Loss = " + str(abs(error)))
-            if abs(error) < self.error:
+            self.sse = error
+            if abs(error) < self.error or abs(self.pre_error - error) < 1e-4:
                 break
+            self.pre_error = error
 
     # Returning the cluster classes for each data
     def predict(self, data):

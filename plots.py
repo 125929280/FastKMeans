@@ -6,8 +6,11 @@ import numpy as np
 import pandas as pd
 from sklearn import metrics
 import warnings
-
+from ensemble.datasets import *
 from sklearn.preprocessing import StandardScaler
+
+
+
 
 warnings.filterwarnings("ignore")
 
@@ -63,26 +66,20 @@ def lof(data, predict=None, k=5, threshold=1, plot=False):
     return outliers, inliers
 
 
-# load datasets
-# dataset_list = [pd.DataFrame(datasets.load_iris().data, columns=datasets.load_iris().feature_names),
-#                 pd.DataFrame(datasets.load_wine().data, columns=datasets.load_wine().feature_names),
-#                 pd.DataFrame(datasets.load_breast_cancer().data, columns=datasets.load_breast_cancer().feature_names),
-#                 pd.DataFrame(datasets.load_digits().data, columns=datasets.load_digits().feature_names)
-#                 ]
-dataset_list = []
-name_list = []
-cluster_list = []
-class_list = []
-
-# Iris
-iris = pd.read_csv('uci/iris.data', header=None)
-iris = iris.replace({'Iris-setosa': 0, 'Iris-versicolor': 1, 'Iris-virginica': 2})
-class_list.append(4)
-# class_list.append(iris[4])
-# iris = iris.drop(4, axis=1)
-dataset_list.append(iris)
-cluster_list.append(3)
-name_list.append('Iris')
+# dataset_list = []
+# name_list = []
+# cluster_list = []
+# class_list = []
+#
+# # Iris
+# iris = pd.read_csv('uci/iris.data', header=None)
+# iris = iris.replace({'Iris-setosa': 0, 'Iris-versicolor': 1, 'Iris-virginica': 2})
+# class_list.append(4)
+# # class_list.append(iris[4])
+# # iris = iris.drop(4, axis=1)
+# dataset_list.append(iris)
+# cluster_list.append(3)
+# name_list.append('Iris')
 
 # lof = LocalOutlierFactor(n_neighbors = 10)
 # error = lof.fit_predict(iris_df.values)
@@ -122,10 +119,10 @@ for idx, dataset in enumerate(dataset_list):
 
     df = dataset
     outliers, inliers = lof(df, k=10, threshold=0)
-    df_true = df[class_list[idx]]
-    df = df.drop(class_list[idx], axis=1)
-    inliers_true = inliers[class_list[idx]]
-    inliers = inliers.drop(class_list[idx], axis=1)
+    df_true = df[0]
+    df = df.drop(0, axis=1)
+    inliers_true = inliers[0]
+    inliers = inliers.drop(0, axis=1)
 
     # dataset = scaler.fit_transform(dataset)
 
@@ -139,8 +136,8 @@ for idx, dataset in enumerate(dataset_list):
     print("轮廓系数：", metrics.silhouette_score(df, dataset_pred, metric='euclidean'))
     print("Time:", time.time() - start_time)
 
-
     inliers = inliers.drop(['k distances', 'local outlier factor'], axis=1)
+    inliers.columns = [i for i in range(0, inliers.shape[1])]
     # print(inliers)
     start_time = time.time()
     kmeans = KMeans(n_clusters=cluster_list[idx])
@@ -164,3 +161,5 @@ for idx, dataset in enumerate(dataset_list):
 # plt.legend()
 # # plt.grid()
 # plt.show()
+
+norm_comparision_plot(lrfmc['R'], figsize=(8, 6))
